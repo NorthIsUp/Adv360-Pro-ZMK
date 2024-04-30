@@ -1,0 +1,3 @@
+*
+!config/west.yml
+!bin/build.sh

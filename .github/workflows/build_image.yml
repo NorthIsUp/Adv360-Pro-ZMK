@@ -1,0 +1,44 @@
+name: Build and Push Docker Image to Docker Hub
+
+on:
+  push:
+    branches:
+      - V3.0
+    paths:
+      - "**"
+      - Dockerfile
+      - config/west.yaml
+      - bin/build.sh
+      - .github/workflows/build_image.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-push-image:
+    if: |
+      contains(github.event.head_commit.modified, 'Dockerfile') ||
+      contains(github.event.head_commit.modified, 'config/west.yml') ||
+      contains(github.event.head_commit.modified, 'bin/build.sh') ||
+      contains(github.event.head_commit.modified, '.github/workflows/build_image.yml')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ vars.DOCKERHUB_ORG }}/zmk-adv360:latest,${{ vars.DOCKERHUB_ORG }}/zmk-adv360:${{ github.sha }}
