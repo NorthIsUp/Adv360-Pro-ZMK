@@ -9,11 +9,15 @@ SELINUX1 := :z
 SELINUX2 := ,z
 endif
 
-.PHONY: all left clean_firmware clean_image clean
+.PHONY: all left clean_firmware clean_image config/version.dtsi clean
 
-all:
-	$(shell bin/get_version.sh >> /dev/null)
+image:
 	$(DOCKER) build --tag zmk --file Dockerfile .
+
+config/version.dtsi: bin/get_version.sh
+	$(shell bin/get_version.sh >> /dev/null)
+
+all: image config/version.dtsi
 	$(DOCKER) run --rm -it --name zmk \
 		-v $(PWD)/firmware:/app/firmware$(SELINUX1) \
 		-v $(PWD)/config:/app/config:ro$(SELINUX2) \
@@ -21,10 +25,8 @@ all:
 		-e COMMIT=$(COMMIT) \
 		-e BUILD_RIGHT=true \
 		zmk
-	git checkout config/version.dtsi
 
-left:
-	$(shell bin/get_version.sh >> /dev/null)
+left: image config/version.dtsi
 	$(DOCKER) build --tag zmk --file Dockerfile .
 	$(DOCKER) run --rm -it --name zmk \
 		-v $(PWD)/firmware:/app/firmware$(SELINUX1) \
@@ -33,7 +35,6 @@ left:
 		-e COMMIT=$(COMMIT) \
 		-e BUILD_RIGHT=false \
 		zmk
-	git checkout config/version.dtsi
 
 clean_firmware:
 	rm -f firmware/*.uf2
@@ -41,4 +42,7 @@ clean_firmware:
 clean_image:
 	$(DOCKER) image rm zmk docker.io/zmkfirmware/zmk-build-arm:stable
 
-clean: clean_firmware clean_image
+clean_version:
+	rm -f config/version.dtsi
+
+clean: clean_firmware clean_image clean_version
