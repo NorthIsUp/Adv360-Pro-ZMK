@@ -1,6 +1,6 @@
 # Adv360 Pro → ZMK main (Zephyr 4.1) port — design
 
-Status: draft for review · 2026-09-24
+Status: approved · 2026-09-24
 
 ## Goal
 
@@ -34,7 +34,7 @@ scope, only Kinesis's changes to it.
 | history | The 36 commits regrouped as one commit per feature C1–C9, so the next forward-port replays 9 coherent patches |
 | overlaps | Where upstream now covers the same ground (LED indicators #3239, layer names #3047), keep Kinesis behaviour; record the overlap in the commit message, don't merge them |
 | variants | Keep both builds: clique (Studio over USB UART, left only) and no-clique |
-| D2 → D1 | Build natively on macOS (west + Zephyr SDK via uv/mise) if research R0 proves it builds both halves; otherwise Docker `zmk-build-arm:4.1`. `native_sim` tests run in CI under D2 (Linux-only) |
+| D1 | Docker for builds and tests: `zmkfirmware/zmk-build-arm:4.1` (or the image R0 finds matching `main`), one long-lived container per worktree so incremental `west build` and `native_sim` tests stay fast. CI is the second check, not the inner loop |
 
 ## Architecture
 
@@ -80,7 +80,7 @@ keeps upstream CI and adds an adv360 build.
 
 | ID | Question | Gates |
 |---|---|---|
-| R0 | Does west + Zephyr SDK build `adv360pro_left`/`right` natively on macOS (arm64), both variants? Exact `-b` board string, west.yml shape, build time. If not, the Docker recipe | every task's build command |
+| R0 | Docker recipe: image tag matching `main`, long-lived container with the west workspace in a named volume, build `adv360pro_left`/`right` both variants and run `native_sim` tests. Exact `-b` board string, west.yml shape, cold and incremental build times | every task's build command |
 | R1 | How does upstream's split transport let a central push custom state to peripherals? Minimal prototype of one custom message left → right | C3 |
 | R2 | For each Kinesis `central.c` fix, does the race still exist in upstream's code? Evidence per fix; port only the ones that do | C6 |
 | R3 | Why did Kinesis revert #3047 (layer names)? Does the reason still hold with the current keymap editor / Clique? | C8/C9 |
@@ -93,7 +93,7 @@ keeps upstream CI and adds an adv360 build.
    fallback-to-trans).
 2. **Per branch (CI):** fork CI and config-repo `V4-adam-edits` build green
    and produce `.uf2`s.
-3. **Hardware checklist (Adam, ~20 min):** the C1–C9 hardware-check column,
+3. **Hardware checklist (Adam, ~20 min), one batched flash after C1–C9 land:** the C1–C9 hardware-check column,
    plus BLE soak: re-pair each profile, sleep → wake, right half out of range
    → back, switch hosts.
 4. **A day of real use** before `V4-adam-edits` replaces `V3.0-adam-edits`.
