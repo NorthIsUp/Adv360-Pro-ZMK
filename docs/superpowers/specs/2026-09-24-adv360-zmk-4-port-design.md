@@ -63,7 +63,7 @@ planning C3.
 | ID | Feature commit | Source on the pin | Hardware check |
 |---|---|---|---|
 | C1 | Kinesis lighting core: 32 layer colors, brightness scaling, BT-profile colors, battery handling, no flash actions, underglow not persisted | `rgb_underglow.c` (+368), `rgb.h`, `rgb_underglow.h`, `behavior_rgb_underglow.c` | each layer lights its color; brightness steps; profile color on switch |
-| C2 | Modifier indicator colors (`ZMK_RGB_UNDERGLOW_MOD_COLOR`) | Kinesis #19 | holding Shift/Ctrl/Alt/GUI lights the indicator |
+| C2 | Lock-key indicator color (`ZMK_RGB_UNDERGLOW_MOD_COLOR`, "RGB hex color of CAPS/SCROLL/NUM LOCK indicators"; Kinesis #19 `99147b98` calls them "modifier indicators") | Kinesis #19 | Caps Lock lights the left half's LED 1, Num Lock and Scroll Lock the right half's LEDs 3 and 2 (chain order), in `MOD_COLOR` (white by default); Shift/Ctrl/Alt/GUI light nothing |
 | C3 | Split LED + backlight sync left → right incl. on/off state (`ZMK_SPLIT_BLE_CENTRAL_SPLIT_{LED,BL}_{STACK,QUEUE}_SIZE`) | `central.c`, `service.c`, `service.h`, `uuid.h` | right half mirrors left's lighting, on/off, backlight — including after sleep/reconnect |
 | C4 | Backlight: `ZMK_BACKLIGHT_BRT_SCALE`, 25 % default, ext-power settings disabled | `backlight.c`, `backlight.h`, `ext_power_generic.c`, `behavior_backlight.c` | backlight up/down/toggle from the mod layer |
 | C5 | `&stp` battery-indicator behavior (`STP_BAT`) | `behavior_stp_indicators.c`, `stp_indicators.dtsi`, `stp.h`, `zmk,behavior-stp-indicators.yaml` | Mod + `&stp STP_BAT` key shows battery level |
