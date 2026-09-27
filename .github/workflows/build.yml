@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: zmkfirmware/zmk-build-arm:stable
+      image: zmkfirmware/zmk-build-arm:4.1
     name: Build (Legacy)
     steps:
       - name: Checkout
@@ -43,13 +43,17 @@ jobs:
       - name: West Zephyr export
         run: west zephyr-export
       - name: West Build (left)
-        run: west build -s zmk/app -d build/left -b adv360_left -- -DZMK_CONFIG="${GITHUB_WORKSPACE}/config"
+        run: west build -s zmk/app -d build/left -b adv360pro_left/nrf52840/zmk -- -DZMK_CONFIG="${GITHUB_WORKSPACE}/config" -DKEYMAP_FILE="${GITHUB_WORKSPACE}/config/adv360.keymap"
       - name: Adv360 Left Kconfig file
         run: grep -vE '(^#|^$)' build/left/zephyr/.config
+      - name: Check keymap (left)
+        run: grep -q macro_ver build/left/zephyr/zephyr.dts
       - name: West Build (right)
-        run: west build -s zmk/app -d build/right -b adv360_right -- -DZMK_CONFIG="${GITHUB_WORKSPACE}/config"
+        run: west build -s zmk/app -d build/right -b adv360pro_right/nrf52840/zmk -- -DZMK_CONFIG="${GITHUB_WORKSPACE}/config" -DKEYMAP_FILE="${GITHUB_WORKSPACE}/config/adv360.keymap"
       - name: Adv360 Right Kconfig file
         run: grep -vE '(^#|^$)' build/right/zephyr/.config
+      - name: Check keymap (right)
+        run: grep -q macro_ver build/right/zephyr/zephyr.dts
       - name: Rename zmk.uf2
         run: cp build/left/zephyr/zmk.uf2 ${{ steps.get_info.outputs.file_prefix }}-left.uf2 && cp build/right/zephyr/zmk.uf2 ${{ steps.get_info.outputs.file_prefix }}-right.uf2
       - name: Archive (Adv360)
@@ -62,7 +66,7 @@ jobs:
   build-clique:
     runs-on: ubuntu-latest
     container:
-      image: zmkfirmware/zmk-build-arm:stable
+      image: zmkfirmware/zmk-build-arm:4.1
     name: Build (Clique)
     steps:
       - name: Checkout
@@ -99,13 +103,17 @@ jobs:
       - name: West Zephyr export
         run: west zephyr-export
       - name: West Build (left)
-        run: west build -s zmk/app -d build/left -b adv360_left -S studio-rpc-usb-uart -- -DZMK_CONFIG="${GITHUB_WORKSPACE}/config" -DCONFIG_ZMK_STUDIO=y
+        run: west build -s zmk/app -d build/left -b adv360pro_left/nrf52840/zmk -S studio-rpc-usb-uart -- -DZMK_CONFIG="${GITHUB_WORKSPACE}/config" -DKEYMAP_FILE="${GITHUB_WORKSPACE}/config/adv360.keymap" -DCONFIG_ZMK_STUDIO=y
       - name: Adv360 Left Kconfig file
         run: grep -vE '(^#|^$)' build/left/zephyr/.config
+      - name: Check keymap (left)
+        run: grep -q macro_ver build/left/zephyr/zephyr.dts
       - name: West Build (right)
-        run: west build -s zmk/app -d build/right -b adv360_right -- -DZMK_CONFIG="${GITHUB_WORKSPACE}/config"
+        run: west build -s zmk/app -d build/right -b adv360pro_right/nrf52840/zmk -- -DZMK_CONFIG="${GITHUB_WORKSPACE}/config" -DKEYMAP_FILE="${GITHUB_WORKSPACE}/config/adv360.keymap"
       - name: Adv360 Right Kconfig file
         run: grep -vE '(^#|^$)' build/right/zephyr/.config
+      - name: Check keymap (right)
+        run: grep -q macro_ver build/right/zephyr/zephyr.dts
       - name: Rename zmk.uf2
         run: cp build/left/zephyr/zmk.uf2 ${{ steps.get_info.outputs.file_prefix }}-left.uf2 && cp build/right/zephyr/zmk.uf2 ${{ steps.get_info.outputs.file_prefix }}-right.uf2
       - name: Archive (Adv360)

@@ -2,12 +2,12 @@ manifest:
   remotes:
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware
-    - name: refil
-      url-base: https://github.com/refil
+    - name: northisup
+      url-base: https://github.com/NorthIsUp
   projects:
     - name: zmk
-      remote: refil
-      revision: adv360-z3.5-2
+      remote: northisup
+      revision: adv360-z4.1-wip
       import: app/west.yml
   self:
     path: config
