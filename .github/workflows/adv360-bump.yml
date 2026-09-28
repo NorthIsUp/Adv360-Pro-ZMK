@@ -1,0 +1,55 @@
+name: Adv360 firmware bump
+
+# Opens a PR that pins config/west.yml to the newest NorthIsUp/zmk release on
+# the chosen channel (repo variable ADV360_CHANNEL: nightly, weekly, monthly,
+# release or stable; default weekly). Merge after flash-testing the PR's UF2s.
+on:
+  schedule:
+    - cron: "43 9 * * *"
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: nightly, weekly, monthly, release or stable (empty = ADV360_CHANNEL)
+        type: string
+        default: ""
+
+permissions: {}
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          CHANNEL: ${{ inputs.channel || vars.ADV360_CHANNEL || 'weekly' }}
+          BASE: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          fork=https://github.com/NorthIsUp/zmk.git
+          tags=$(git ls-remote --tags "$fork")
+          chan=$(awk '{print $2}' <<<"$tags" | grep -E "^refs/tags/adv360-$CHANNEL-[0-9-]+$" | sort | tail -1 || true)
+          [ -n "$chan" ] || { echo "no $CHANNEL release yet"; exit 0; }
+          commit=$(awk -v r="$chan^{}" '$2 == r {print $1}' <<<"$tags")
+          version=$(awk -v c="$commit" '$1 == c && $2 ~ /^refs\/tags\/zmk-.*-adv360\.[0-9]+\^\{\}$/ {print $2}' <<<"$tags" |
+            sed -e 's|^refs/tags/||' -e 's|\^{}$||' | sort -V | tail -1)
+          [ -n "$version" ] || { echo "::error::$chan points at no zmk-*-adv360.* version"; exit 1; }
+          current=$(awk '$1 == "revision:" {print $2}' config/west.yml)
+          echo "channel $CHANNEL: ${chan#refs/tags/} -> $version (pinned: $current)"
+          [ "$current" != "$version" ] || { echo "already pinned"; exit 0; }
+          branch=bump/$version
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then echo "$branch exists"; exit 0; fi
+          git config user.name adv360-bump
+          git config user.email adv360-bump@users.noreply.github.com
+          git switch -c "$branch"
+          sed -i "s|^\(\s*revision:\s*\).*|\1$version|" config/west.yml
+          git commit -qam "build: firmware $version ($CHANNEL)"
+          git push -q origin "$branch"
+          gh pr create --base "$BASE" --head "$branch" --title "build: firmware $version ($CHANNEL)" --body \
+            "Pins \`config/west.yml\` to [\`$version\`](https://github.com/NorthIsUp/zmk/releases/tag/$version), the newest \`$CHANNEL\` release (was \`$current\`). Flash the UF2s from this PR's Build run, test, then merge."
+          # Pushes made with GITHUB_TOKEN don't trigger other workflows; dispatch the build explicitly.
+          gh workflow run build.yml --ref "$branch"
