@@ -7,7 +7,7 @@ manifest:
   projects:
     - name: zmk
       remote: northisup
-      revision: adv360-z4.1
+      revision: zmk-v0.3.0-192-g5b51501f-adv360.2
       import: app/west.yml
   self:
     path: config
